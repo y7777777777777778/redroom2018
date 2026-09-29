@@ -1,86 +1,105 @@
 (() => {
-    //マウスが押された際の関数
+    // マウスが押された際の関数
     function mdown(e) {
 
-        //クラス名に .drag を追加
+        // クラス名に .drag を追加
         this.classList.add("drag");
 
-        //タッチデイベントとマウスのイベントの差異を吸収
-        if(e.type === "mousedown") {
-            var event = e;
+        // タッチイベントとマウスイベントの差異を吸収
+        let event;
+
+        if (e.type === "mousedown") {
+            event = e;
         } else {
-            var event = e.changedTouches[0];
+            event = e.changedTouches[0];
         }
 
-        //要素内の相対座標を取得
+        // 要素内の相対座標を取得
         x = event.pageX - this.offsetLeft;
         y = event.pageY - this.offsetTop;
 
-        //ムーブイベントにコールバック
+        // ムーブイベントにコールバック
         document.body.addEventListener("mousemove", mmove, false);
         document.body.addEventListener("touchmove", mmove, false);
     }
 
-    //マウスカーソルが動いたときに発火
+    // マウスカーソルが動いたときに発火
     function mmove(e) {
 
-        //ドラッグしている要素を取得
+        // ドラッグしている要素を取得
         var drag = document.getElementsByClassName("drag")[0];
 
-        //同様にマウスとタッチの差異を吸収
-        if(e.type === "mousemove") {
-            var event = e;
-        } else {
-            var event = e.changedTouches[0];
+        // ドラッグ対象がなくなっていた場合は終了
+        if (!drag) {
+            document.body.removeEventListener("mousemove", mmove, false);
+            document.body.removeEventListener("touchmove", mmove, false);
+            return;
         }
 
-        //フリックしたときに画面を動かさないようにデフォルト動作を抑制
+        // マウスとタッチの差異を吸収
+        let event;
+
+        if (e.type === "mousemove") {
+            event = e;
+        } else {
+            event = e.changedTouches[0];
+        }
+
+        // フリックしたときに画面を動かさないようにデフォルト動作を抑制
         e.preventDefault();
 
-        //マウスが動いた場所に要素を動かす
+        // マウスが動いた場所に要素を動かす
         drag.style.top = event.pageY - y + "px";
         drag.style.left = event.pageX - x + "px";
 
-        //マウスボタンが離されたとき、またはカーソルが外れたとき発火
+        // マウスボタンが離されたとき、またはカーソルが外れたとき発火
         drag.addEventListener("mouseup", mup, false);
         document.body.addEventListener("mouseleave", mup, false);
         drag.addEventListener("touchend", mup, false);
         document.body.addEventListener("touchleave", mup, false);
-
     }
 
-    //マウスボタンが上がったら発火
+    // マウスボタンが上がったら発火
     function mup(e) {
         var drag = document.getElementsByClassName("drag")[0];
 
-        //ムーブベントハンドラの消去
+        // ムーブイベントハンドラを消去
         document.body.removeEventListener("mousemove", mmove, false);
-        drag.removeEventListener("mouseup", mup, false);
         document.body.removeEventListener("touchmove", mmove, false);
+
+        // ドラッグ中の要素が存在しない場合はここで終了
+        if (!drag) {
+            return;
+        }
+
+        // ドラッグイベントを消去
+        drag.removeEventListener("mouseup", mup, false);
         drag.removeEventListener("touchend", mup, false);
 
-        //クラス名 .drag も消す
+        // body側のイベントも消去
+        document.body.removeEventListener("mouseleave", mup, false);
+        document.body.removeEventListener("touchleave", mup, false);
+
+        // クラス名 .drag も消す
         drag.classList.remove("drag");
     }
 
-    function sound(n)
-    {
-        if (n === 1){
+    function sound(n) {
+        if (n === 1) {
             player1.autostart = true;
             player1.start();
         }
 
-        if (n === 2){
+        if (n === 2) {
             player2.autostart = true;
             player2.start();
         }
 
-        if (n === 3){
+        if (n === 3) {
             player3.autostart = true;
             player3.start();
         }
     }
-
 
     // 指定ms待つ
     function sleep(ms) {
@@ -90,43 +109,46 @@
     // 非同期処理の結果を用いた処理（async/await）
     async function testAsync(cnt) {
         try {
-            $('#dialog01').css('display', 'none')
+            $('#dialog01').css('display', 'none');
 
             if (cnt <= 3) {
-                await sleep(800)
-                $('#dialog01').css('display', 'block')
-                sound(1)
+                await sleep(800);
+                $('#dialog01').css('display', 'block');
+                sound(1);
 
             } else if (cnt === 4) {
-                await sleep(800)
-                $('#dialog02').css('display', 'block')
-                sound(2)
-                await sleep(2000)
-                $('#dialog02').css('display', 'none')
-                $('#fear-box').css('display', 'block')
-                sound(3)
+                await sleep(800);
+                $('#dialog02').css('display', 'block');
+                sound(2);
+
+                await sleep(2000);
+
+                $('#dialog02').css('display', 'none');
+                $('#fear-box').css('display', 'block');
+                sound(3);
             }
-        } catch(err) {
+
+        } catch (err) {
             return console.error(`error: ${err}`);
         }
     }
 
-    let x
-    let y
-    let cnt = 1
+    let x;
+    let y;
+    let cnt = 1;
 
-    let player1
-    let player2
-    let player3
+    let player1;
+    let player2;
+    let player3;
 
     // 画面の読み込みが終わった時点で発火するイベント
-    window.onload = function()
-    {
-        //要素の取得
+    window.onload = function() {
+
+        // 要素の取得
         var elements = document.getElementsByClassName("drag-and-drop");
 
-        //マウスが要素内で押されたとき、又はタッチされたとき発火
-        for(var i = 0; i < elements.length; i++) {
+        // マウスが要素内で押されたとき、又はタッチされたとき発火
+        for (var i = 0; i < elements.length; i++) {
             elements[i].addEventListener("mousedown", mdown, false);
             elements[i].addEventListener("touchstart", mdown, false);
         }
@@ -137,17 +159,18 @@
     };
 
     // うむ
-    $('#close-btn').click(function(){
-        // 音源のロード
-         player1 = new Tone.Player("./audio/01.ogg").toMaster();
-         player2 = new Tone.Player("./audio/02.ogg").toMaster();
-         player3 = new Tone.Player("./audio/03.ogg").toMaster();
+    $('#close-btn').click(function() {
 
-        cnt++
+        // 音源のロード
+        player1 = new Tone.Player("./audio/01.ogg").toMaster();
+        player2 = new Tone.Player("./audio/02.ogg").toMaster();
+        player3 = new Tone.Player("./audio/03.ogg").toMaster();
+
+        cnt++;
 
         // async関数の実行
         testAsync(cnt).catch(
             err => console.error(`error: ${err}`)
         );
-    })
-})()
+    });
+})();
